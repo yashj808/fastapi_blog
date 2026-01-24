@@ -25,8 +25,8 @@ posts: list[dict] = [
     },
 ]
 
-@app.get("/", include_in_schema=False)
-@app.get("/posts", include_in_schema=False) #The include in schema hides the http endpoint from the docs, so that people visiting the docs don't see the particular endpoint
+@app.get("/", include_in_schema=False, name="home")
+@app.get("/posts", include_in_schema=False, name="posts") #The include in schema hides the http endpoint from the docs, so that people visiting the docs don't see the particular endpoint
 def home(request: Request):
     return templates.TemplateResponse(request, "home.html", {"posts":posts})
 
