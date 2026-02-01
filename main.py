@@ -1,33 +1,27 @@
-from fastapi import FastAPI, Request, status, HTTPException
+from fastapi import FastAPI, Request, status, HTTPException, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from schemas import PostCreate, PostResponse 
+from schemas import PostCreate, PostResponse , UserResponse, UserCreate
+
+from typing import Annotated
+
+import models
+from database import Base, engine, get_db
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-templates = Jinja2Templates(directory="templates")
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
-posts: list[dict] = [
-    {
-        "id": 1,
-        "author": "Yash Jogdand",
-        "title": "FastAPI is Awesome",
-        "content": "This framework is really easy to use and super fast.",
-        "date_posted": "April 20, 2025",
-    },
-    {
-        "id": 2,
-        "author": "Jane Doe",
-        "title": "Python is Great for Web Development",
-        "content": "Python is a great language for web development, and FastAPI makes it even better.",
-        "date_posted": "April 21, 2025",
-    },
-]
+templates = Jinja2Templates(directory="templates")
 
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts") #The include in schema hides the http endpoint from the docs, so that people visiting the docs don't see the particular endpoint
@@ -41,6 +35,41 @@ def post_page(request:Request, post_id: int):
             title = post["title"][:50]
             return templates.TemplateResponse(request, "post.html", {"post":post, "title":title})
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="post not found")
+
+@app.post(
+        "/api/users",
+        response_model=UserResponse,
+        status_code = status.HTTP_201_CREATED,
+)
+def create_user(user: UserCreate, db:Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.User).where(models.User.username == user.username),)
+    existing_user=result.scalars().first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists",
+        )
+    
+    result = db.execute(select(models.User).where(models.User.email == user.email),)
+    existing_email=result.scalars().first()
+
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists",
+        )
+    
+    new_user = models.User(
+        username = user.username,
+        email=user.email,
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
 
 @app.get("/api/posts/", response_model=list[PostResponse])
 def get_posts():
