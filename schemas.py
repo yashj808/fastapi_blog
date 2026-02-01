@@ -13,10 +13,9 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
-
-    id:int 
-    image_file = str | None
-    image_path = str
+    id: int
+    image_file: str | None = None
+    image_path: str | None = None
 
 
 class PostBase(BaseModel):
@@ -33,4 +32,4 @@ class PostResponse(PostBase):
     id: int
     user_id: int
     date_posted: datetime 
-    author = UserResponse
+    author: UserResponse
