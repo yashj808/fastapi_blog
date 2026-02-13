@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from schemas import PostCreate, PostResponse , UserResponse, UserCreate, PostUpdate
+from schemas import PostCreate, PostResponse , UserResponse, UserCreate, PostUpdate, PostPut
 
 from typing import Annotated
 
@@ -169,7 +169,7 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
 @app.put("/api/posts/{post_id}", response_model=PostResponse)
-def get_post(post_id: int, post_data: PostCreate, db: Annotated[Session, Depends(get_db)]):
+def update_post_full(post_id: int, post_data: PostPut, db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.Post).where(models.Post.id == post_id))
     post = result.scalars().first()
     if not post:
@@ -187,6 +187,29 @@ def get_post(post_id: int, post_data: PostCreate, db: Annotated[Session, Depends
     post.title = post_data.title
     post.content = post_data.content
     post.user_id = post_data.user_id
+
+    db.commit()
+    db.refresh(post)
+    return post
+
+@app.patch("/api/posts/{post_id}", response_model=PostResponse)
+def update_post_partial(post_id: int, post_data: PostUpdate, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+        
+    update_data = post_data.model_dump(exclude_unset=True)
+    if "user_id" in update_data and update_data["user_id"] != post.user_id:
+        result = db.execute(select(models.User).where(models.User.id == update_data["user_id"]))
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+    for field, value in update_data.items():
+        setattr(post, field, value)
 
     db.commit()
     db.refresh(post)
