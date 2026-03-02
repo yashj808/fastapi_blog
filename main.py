@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from schemas import PostCreate, PostResponse , UserResponse, UserCreate, PostUpdate, PostPut
+from schemas import PostCreate, PostResponse , UserResponse, UserCreate, PostUpdate, PostPut, UserUpdate
 
 from typing import Annotated
 
