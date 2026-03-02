@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from schemas import PostCreate, PostResponse , UserResponse, UserCreate, PostUpdate, PostPut, UserUpdate
+from schemas import PostCreate, PostResponse , UserResponse, UserCreate, PostUpdate, PostPut, UserUpdate, UserPut
 
 from typing import Annotated
 
@@ -127,6 +127,89 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
     posts = result.scalars().all()
     return posts
+
+@app.patch("/api/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: int,
+                user_update: UserUpdate,
+                db: Annotated[Session, Depends(get_db)],
+                ):
+                    result = db.execute(select(models.User).where(models.User.id == user_id))
+                    user = result.scalars().first()
+                    if not user:
+                        raise HTTPException(
+                            status_code=status.HTTP_404_NOT_FOUND,
+                            detail="User not found",
+                        )
+                    if user_update.username is not None and user_update.username != user.username:
+                        result = db.execute(select(models.User).where(models.User.username == user_update.username),)
+                        existing_user = result.scalars().first()
+
+                        if existing_user:
+                            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already exists",
+            )
+                    if user_update.email is not None and user_update.email != user.email:
+                        result = db.execute(
+                        select(models.User).where(models.User.email == user_update.email),
+        )
+                        existing_email = result.scalars().first()
+                        if existing_email and existing_email.id != user_id:
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Email already registered",
+                            )
+                    
+                    if user_update.username is not None:
+                        user.username = user_update.username
+                    if user_update.email is not None:
+                        user.email = user_update.email
+                    if user_update.image_file is not None:
+                        user.image_file = user_update.image_file
+                    
+                    db.commit()
+                    db.refresh(user)
+                    return user
+
+
+@app.put("/api/users/{user_id}", response_model=UserResponse)
+def update_user_full(user_id: int,
+                user_put: UserPut,
+                db: Annotated[Session, Depends(get_db)],
+                ):
+                    result = db.execute(select(models.User).where(models.User.id == user_id))
+                    user = result.scalars().first()
+                    if not user:
+                        raise HTTPException(
+                            status_code=status.HTTP_404_NOT_FOUND,
+                            detail="User not found",
+                        )
+                    if user_put.username != user.username:
+                        result = db.execute(select(models.User).where(models.User.username == user_put.username),)
+                        existing_user = result.scalars().first()
+
+                        if existing_user:
+                            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already exists",
+            )
+                    if user_put.email != user.email:
+                        result = db.execute(
+                        select(models.User).where(models.User.email == user_put.email),
+        )
+                        existing_email = result.scalars().first()
+                        if existing_email and existing_email.id != user_id:
+                            raise HTTPException(
+                                status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Email already registered",
+                            )
+                    
+                    user.username = user_put.username
+                    user.email = user_put.email
+                    
+                    db.commit()
+                    db.refresh(user)
+                    return user
 
 
 @app.get("/api/posts", response_model=list[PostResponse])
