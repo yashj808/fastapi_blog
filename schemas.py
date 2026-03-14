@@ -30,7 +30,6 @@ class UserUpdate(BaseModel):
 class PostBase(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     content: str = Field(min_length=1)
-    author: str = Field(min_length=1, max_length=100)
 
 class PostCreate(PostBase):
     user_id: int #temporary
@@ -42,7 +41,7 @@ class PostUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=100)
     content: str | None = Field(default=None, min_length=1)
     user_id: int | None = None
-    
+
 class PostResponse(PostBase):
     model_config = ConfigDict(from_attributes=True)
 
