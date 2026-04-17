@@ -46,7 +46,7 @@ class PostCreate(PostBase):
     user_id: int #temporary
 
 class PostPut(PostBase): # New schema for PUT requests
-    user_id: int
+    pass
 
 class PostUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=100)
