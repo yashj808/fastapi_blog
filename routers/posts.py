@@ -82,14 +82,6 @@ async def update_post_partial(post_id: int, post_data: PostUpdate,current_user:C
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this post")
         
     update_data = post_data.model_dump(exclude_unset=True)
-    if "user_id" in update_data and update_data["user_id"] != post.user_id:
-        result = await db.execute(select(models.User).where(models.User.id == update_data["user_id"]))
-        user = result.scalars().first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
     for field, value in update_data.items():
         setattr(post, field, value)
 
