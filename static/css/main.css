@@ -26,14 +26,38 @@
 }
 
 /* Base Styles */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--color-bg-body);
   color: var(--color-text-primary);
+  padding-top: 5rem; /* Space for fixed navbar */
+  position: relative;
+}
+
+/* Ensure navbar doesn't block clicks on content below it */
+.navbar {
+  z-index: 1030;
+}
+
+.site-header {
+  height: 0; /* Header wrapper shouldn't take space */
 }
 
 main {
-  padding-top: var(--spacing-xl);
+  position: relative;
+  z-index: 1; /* Above any potential background layers */
+}
+
+/* Articles and sections must be clickable */
+.content-section, .article-title, .nav-link, button, a {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto !important;
 }
 
 h1,
@@ -63,6 +87,10 @@ button:focus-visible {
 /* Headers and Navigation */
 .bg-steel {
   background-color: var(--color-steel);
+}
+
+.fixed-top {
+  z-index: 1030; /* Ensure it stays above other content but follows Bootstrap defaults */
 }
 
 .site-header .navbar-nav .nav-link {
