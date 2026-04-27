@@ -39,7 +39,7 @@ export async function getCurrentUser() {
     }
   })();
 
-  return fetchPromise;
+  return await fetchPromise;
 }
 
 export function logout() {
